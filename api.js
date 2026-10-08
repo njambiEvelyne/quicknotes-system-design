@@ -106,4 +106,4 @@ async function createNote(event) {
   }
 }
 
-noteForm.addEventListener("submit", createNote)
+noteForm.addEventListener("submit", createNote);
