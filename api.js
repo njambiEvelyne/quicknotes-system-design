@@ -1,6 +1,10 @@
 const API_URL = "https://jsonplaceholder.typicode.com/posts";
 
 const loadButton = document.querySelector("#load-btn");
+const noteForm = document.querySelector("#note-form");
+const titleInput = document.querySelector("#title-input");
+const bodyInput = document.querySelector("#body-input");
+const submitButton = document.querySelector("#submit-btn");
 const notesList = document.querySelector("#notes-list");
 const statusMessage = document.querySelector("#status");
 
@@ -65,3 +69,41 @@ async function loadNotes() {
 }
 
 loadButton.addEventListener("click", loadNotes);
+
+async function createNote(event) {
+  event.preventDefault();
+
+  const title = titleInput.value.trim();
+  const body = bodyInput.value;
+
+  if (!title) {
+    setStatus("Please enter a title for your note.", "error");
+    titleInput.focus();
+    return;
+  }
+  if (title.length > 100) {
+    setStatus("The title must be 100 characters or fewer.", "error");
+    titleInput.focus();
+    return;
+  }
+
+  submitButton.disabled = true;
+  setStatus("Creating note...");
+  try {
+    const { data: note, status } = await request(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=UTF-8" },
+      body: JSON.stringify({ title, body, userId: 1 }),
+    });
+    if (!notesList.querySelector(".note")) notesList.replaceChildren();
+    notesList.prepend(createNoteElement(note));
+    noteForm.reset();
+    setStatus(`Note created (status ${status}, id ${note.id}).`, "success");
+  } catch (error) {
+    setStatus("Couldn't create the note. Please try again.", "error");
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
+noteForm.addEventListener("submit", createNote);
