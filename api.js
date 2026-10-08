@@ -36,7 +36,12 @@ function createNoteElement(note) {
   const body = document.createElement("p");
   body.textContent = note.body || "";
 
-  item.append(title, body);
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.textContent = "Delete";
+  deleteButton.addEventListener("click", () => deleteNote(note, item, deleteButton));
+
+  item.append(title, body, deleteButton);
   return item;
 }
 
@@ -73,7 +78,8 @@ loadButton.addEventListener("click", loadNotes);
 async function createNote(event) {
   event.preventDefault();
 
-  const title = titleInput.value.trim();
+  const rawTitle = titleInput.value;
+  const title = rawTitle.trim();
   const body = bodyInput.value;
 
   if (!title) {
@@ -81,7 +87,7 @@ async function createNote(event) {
     titleInput.focus();
     return;
   }
-  if (title.length > 100) {
+  if (rawTitle.length > 100) {
     setStatus("The title must be 100 characters or fewer.", "error");
     titleInput.focus();
     return;
@@ -107,3 +113,25 @@ async function createNote(event) {
 }
 
 noteForm.addEventListener("submit", createNote);
+
+async function deleteNote(note, item, button) {
+  button.disabled = true;
+  setStatus("Deleting note...");
+
+  try {
+    const { status } = await request(`${API_URL}/${encodeURIComponent(note.id)}`, {
+      method: "DELETE",
+    });
+
+    // JSONPlaceholder acknowledges DELETE but does not persist it; remove the note locally until the next load.
+    item.remove();
+    if (!notesList.querySelector(".note")) {
+      renderNotes([]);
+    }
+    setStatus(`Note deleted (status ${status}, id ${note.id}).`, "success");
+  } catch (error) {
+    setStatus("Couldn't delete the note. Please try again.", "error");
+  } finally {
+    button.disabled = false;
+  }
+}
